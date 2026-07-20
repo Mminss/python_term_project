@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DROP // PUBG 플레이어 검색</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14150f;
+    --panel: #1d1f16;
+    --panel-2: #262a1c;
+    --line: #3a3f2c;
+    --text: #e9e7da;
+    --muted: #9aa085;
+    --olive: #7d8a5c;
+    --signal: #ff6a1a;
+    --signal-dim: #a84c17;
+    --danger: #d9483a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(255,106,26,0.06), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Rajdhani', sans-serif;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:48px 20px 80px;
+  }
+  .eyebrow{
+    font-family:'Oswald', sans-serif;
+    font-size:12px;
+    letter-spacing:0.35em;
+    color:var(--signal);
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size:clamp(32px, 6vw, 52px);
+    letter-spacing:0.01em;
+    margin:0 0 6px;
+    text-transform:uppercase;
+    line-height:1.05;
+  }
+  h1 span{color:var(--signal);}
+  .sub{
+    color:var(--muted);
+    font-size:15px;
+    margin:0 0 36px;
+    max-width:52ch;
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:22px;
+    position:relative;
+  }
+  .panel::before{
+    content:'';
+    position:absolute;
+    top:0; left:0;
+    width:28px; height:2px;
+    background:var(--signal);
+  }
+  .field-label{
+    font-family:'Oswald', sans-serif;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--muted);
+    display:block;
+    margin-bottom:6px;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:1fr 140px;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  input[type=text], input[type=password], select{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:'Rajdhani', sans-serif;
+    font-size:16px;
+    font-weight:600;
+    padding:12px 14px;
+    border-radius:1px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  input[type=text]:focus, input[type=password]:focus, select:focus{
+    border-color:var(--signal);
+  }
+  select{ appearance:none; cursor:pointer; }
+
+  .search-row{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:14px;
+    margin-top:20px;
+  }
+  .search-row input{ font-size:18px; padding:14px 16px; }
+  button{
+    font-family:'Oswald', sans-serif;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-size:14px;
+    background:var(--signal);
+    color:#1a1200;
+    border:none;
+    padding:0 26px;
+    border-radius:1px;
+    cursor:pointer;
+    transition:background .15s, transform .1s;
+  }
+  button:hover{ background:#ff7f3d; }
+  button:active{ transform:translateY(1px); }
+  button:disabled{ background:var(--signal-dim); cursor:wait; }
+
+  .hint{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:10px;
+    line-height:1.5;
+  }
+  .hint a{ color:var(--olive); }
+
+  #result-area{ margin-top:28px; }
+
+  .status-msg{
+    font-family:'Oswald', sans-serif;
+    font-size:13px;
+    letter-spacing:0.05em;
+    padding:14px 16px;
+    border-left:2px solid var(--muted);
+    color:var(--muted);
+  }
+  .status-msg.error{
+    border-left-color:var(--danger);
+    color:#f0a89f;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:26px;
+    animation:reveal .25s ease-out;
+  }
+  @keyframes reveal{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:1px solid var(--line);
+    padding-bottom:16px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .player-name{
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size:28px;
+    text-transform:uppercase;
+  }
+  .shard-tag{
+    font-family:'Oswald', sans-serif;
+    font-size:12px;
+    letter-spacing:0.12em;
+    color:var(--signal);
+    text-transform:uppercase;
+    border:1px solid var(--signal-dim);
+    padding:4px 10px;
+  }
+  .meta-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(140px,1fr));
+    gap:16px;
+    margin-bottom:20px;
+  }
+  .meta-item .field-label{ margin-bottom:4px; }
+  .meta-val{
+    font-family:'Oswald', sans-serif;
+    font-size:20px;
+    font-weight:600;
+  }
+  .acc-id{
+    font-size:12px;
+    color:var(--muted);
+    word-break:break-all;
+    font-family:monospace;
+  }
+
+  .matches-label{
+    font-family:'Oswald', sans-serif;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .match-list{
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    max-height:280px;
+    overflow-y:auto;
+  }
+  .match-row{
+    background:var(--panel-2);
+    padding:9px 12px;
+    font-size:13px;
+    font-family:monospace;
+    color:var(--olive);
+    display:flex;
+    justify-content:space-between;
+  }
+  .match-row span.idx{ color:var(--muted); font-family:'Rajdhani',sans-serif; }
+
+  .analyze-block{
+    margin-top:22px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+  }
+  .analyze-controls{
+    display:flex;
+    align-items:end;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .analyze-controls .num-field{ width:100px; }
+  .analyze-controls .num-field input{ padding:10px 12px; font-size:15px; }
+  .progress-line{
+    margin-top:14px;
+    font-family:'Oswald', sans-serif;
+    font-size:12.5px;
+    letter-spacing:0.05em;
+    color:var(--muted);
+  }
+  .progress-track{
+    margin-top:8px;
+    height:4px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--signal);
+    width:0%;
+    transition:width .2s linear;
+  }
+
+  .stat-big-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+    gap:14px;
+    margin:20px 0;
+  }
+  .stat-big{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-top:2px solid var(--signal);
+    padding:16px 18px;
+  }
+  .stat-big .field-label{ margin-bottom:8px; }
+  .stat-big .val{
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size:30px;
+    line-height:1;
+  }
+  .stat-big .unit{
+    font-size:13px;
+    color:var(--muted);
+    margin-left:4px;
+  }
+
+  .csv-table-wrap{
+    max-height:280px;
+    overflow-y:auto;
+    border:1px solid var(--line);
+    margin-top:6px;
+  }
+  table.csv-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    font-family:'Rajdhani', sans-serif;
+  }
+  table.csv-table th{
+    font-family:'Oswald', sans-serif;
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    text-align:left;
+    padding:9px 12px;
+    background:var(--panel-2);
+    position:sticky;
+    top:0;
+  }
+  table.csv-table td{
+    padding:8px 12px;
+    border-top:1px solid var(--line);
+    font-family:monospace;
+  }
+  table.csv-table tr:hover td{ background:var(--panel-2); }
+
+  .download-row{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+  }
+  .download-row button{
+    background:transparent;
+    border:1px solid var(--olive);
+    color:var(--olive);
+    font-size:12px;
+    padding:0 18px;
+    height:38px;
+  }
+  .download-row button:hover{ background:var(--panel-2); color:var(--text); }
+
+  footer{
+    margin-top:40px;
+    text-align:center;
+    font-size:11.5px;
+    color:var(--muted);
+    letter-spacing:0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">PUBG STATS LOOKUP</div>
+  <h1>PLAYER <span>SEARCH</span></h1>
+  <p class="sub">닉네임으로 PUBG 플레이어를 검색합니다. API 키는 이 페이지에 저장되지 않고, 검색할 때만 브라우저 메모리에서 사용됩니다.</p>
+
+  <div class="panel">
+    <div class="row" style="grid-template-columns:1fr;">
+      <div>
+        <label class="field-label" for="shard">SHARD</label>
+        <select id="shard">
+          <option value="steam">Steam</option>
+          <option value="kakao">Kakao</option>
+          <option value="psn">PSN</option>
+          <option value="xbox">Xbox</option>
+          <option value="stadia">Stadia</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <div>
+        <label class="field-label" for="nickname">NICKNAME</label>
+        <input type="text" id="nickname" placeholder="플레이어 닉네임 입력 (예: PlayerName)">
+      </div>
+      <button id="searchBtn" style="align-self:end; height:50px;">검색</button>
+    </div>
+
+    <p class="hint" id="keyStatus">config.csv에서 API 키를 불러오는 중...</p>
+  </div>
+
+  <div id="result-area"></div>
+
+  <footer>PUBG API · Not affiliated with KRAFTON</footer>
+</div>
+
+<script>
+const shardSelect = document.getElementById('shard');
+const nicknameInput = document.getElementById('nickname');
+const searchBtn = document.getElementById('searchBtn');
+const resultArea = document.getElementById('result-area');
+const keyStatus = document.getElementById('keyStatus');
+
+let apiKey = null;
+
+async function loadApiKey(){
+  try{
+    const res = await fetch('./config.csv', { cache: 'no-store' });
+    if(!res.ok) throw new Error('config.csv not found');
+    const text = await res.text();
+    // config.csv 형식: 첫 줄은 헤더(api_key), 둘째 줄에 실제 키 값
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const key = lines.length > 1 ? lines[1] : lines[0];
+    if(!key || key.toLowerCase().includes('your_api_key')){
+      throw new Error('key not set');
+    }
+    apiKey = key.replace(/^"|"$/g, ''); // 혹시 따옴표로 감싸져 있으면 제거
+    keyStatus.textContent = 'API 키 로드 완료. 닉네임을 검색해보세요.';
+    keyStatus.style.color = 'var(--olive)';
+  }catch(err){
+    keyStatus.innerHTML = 'config.csv를 찾을 수 없거나 키가 비어있습니다. 같은 폴더에 config.csv를 만들고 로컬 서버로 열어주세요. (예: <code>python -m http.server</code>)';
+    keyStatus.style.color = '#f0a89f';
+    console.error(err);
+  }
+}
+loadApiKey();
+
+function renderStatus(text, isError){
+  resultArea.innerHTML = `<div class="status-msg${isError ? ' error' : ''}">${text}</div>`;
+}
+
+function renderPlayer(player, shard){
+  const name = player.attributes.name;
+  const accId = player.id;
+  const createdAt = player.attributes.createdAt;
+  const matches = (player.relationships && player.relationships.matches && player.relationships.matches.data) || [];
+
+  const maxAnalyzable = Math.min(matches.length, 20);
+
+  resultArea.innerHTML = `
+    <div class="card">
+      <div class="card-head">
+        <div class="player-name">${escapeHtml(name)}</div>
+        <div class="shard-tag">${shard}</div>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="field-label">최근 매치 수 (14일)</span>
+          <div class="meta-val">${matches.length}</div>
+        </div>
+        <div class="meta-item">
+          <span class="field-label">계정 생성일</span>
+          <div class="meta-val" style="font-size:15px;">${createdAt ? createdAt.split('T')[0] : '-'}</div>
+        </div>
+        <div class="meta-item">
+          <span class="field-label">Account ID</span>
+          <div class="acc-id">${accId}</div>
+        </div>
+      </div>
+      <div class="analyze-block" style="border-top:none; padding-top:0; margin-top:22px;">
+        <div class="matches-label">매치별 성과 (킬 수 · 생존시간 · 순위)</div>
+        <div class="analyze-controls">
+          <div class="num-field">
+            <label class="field-label" for="matchCount">분석 경기 수</label>
+            <input type="text" id="matchCount" value="${Math.min(10, maxAnalyzable)}" inputmode="numeric">
+          </div>
+          <button id="analyzeBtn" ${maxAnalyzable === 0 ? 'disabled' : ''}>분석 시작</button>
+        </div>
+        <p class="hint">API 요청 제한(분당 10건) 때문에 매치마다 간격을 두고 순서대로 조회해요. 10경기 기준 약 1분 정도 걸립니다. 최대 ${maxAnalyzable}경기까지 가능해요 (최근 14일 기록 기준).</p>
+        <div id="analyzeOutput"></div>
+      </div>
+    </div>
+  `;
+
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  analyzeBtn.addEventListener('click', () => {
+    const countInput = document.getElementById('matchCount');
+    let n = parseInt(countInput.value, 10);
+    if(isNaN(n) || n < 1) n = 1;
+    if(n > maxAnalyzable) n = maxAnalyzable;
+    countInput.value = n;
+    analyzeMatches(matches.slice(0, n).map(m => m.id), shard, accId, name);
+  });
+}
+
+async function analyzeMatches(matchIds, shard, accId, nickname){
+  const output = document.getElementById('analyzeOutput');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  analyzeBtn.disabled = true;
+
+  output.innerHTML = `
+    <div class="progress-line" id="progressLine">0 / ${matchIds.length} 매치 분석 중...</div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  `;
+  const progressLine = document.getElementById('progressLine');
+  const progressFill = document.getElementById('progressFill');
+
+  const rows = [];
+
+  for(let i = 0; i < matchIds.length; i++){
+    progressLine.textContent = `${i} / ${matchIds.length} 매치 분석 중... (${matchIds[i].slice(0,8)})`;
+    progressFill.style.width = `${(i / matchIds.length) * 100}%`;
+
+    try{
+      const url = `https://api.pubg.com/shards/${shard}/matches/${matchIds[i]}`;
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/vnd.api+json'
+        }
+      });
+
+      if(res.status === 429){
+        progressLine.textContent = `요청 한도 초과, 15초 대기 후 재시도... (${i+1}/${matchIds.length})`;
+        await new Promise(r => setTimeout(r, 15000));
+        i--; // 같은 매치를 다시 시도
+        continue;
+      }
+
+      if(res.ok){
+        const matchData = await res.json();
+        const included = matchData.included || [];
+        const participant = included.find(item =>
+          item.type === 'participant' && item.attributes && item.attributes.stats &&
+          item.attributes.stats.playerId === accId
+        );
+
+        if(participant){
+          const stats = participant.attributes.stats;
+          rows.push({
+            name: stats.name,
+            kills: stats.kills,
+            timeSurvived: Math.round(stats.timeSurvived),
+            rank: stats.winPlace
+          });
+        }
+      }
+    }catch(err){
+      console.error('match fetch error', matchIds[i], err);
+    }
+
+    // 분당 10건 제한을 피하기 위한 간격 (마지막 요청 후엔 대기 불필요)
+    if(i < matchIds.length - 1){
+      await new Promise(r => setTimeout(r, 6000));
+    }
+  }
+
+  progressFill.style.width = '100%';
+
+  if(rows.length === 0){
+    output.innerHTML += `<div class="status-msg error" style="margin-top:14px;">경기 데이터를 가져오지 못했습니다. 콘솔을 확인해주세요.</div>`;
+    analyzeBtn.disabled = false;
+    return;
+  }
+
+  const avgKills = rows.reduce((s, r) => s + r.kills, 0) / rows.length;
+  const avgTime = rows.reduce((s, r) => s + r.timeSurvived, 0) / rows.length;
+  const avgRank = rows.reduce((s, r) => s + r.rank, 0) / rows.length;
+
+  const tableRows = rows.map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${escapeHtml(r.name)}</td>
+      <td>${r.kills}</td>
+      <td>${r.timeSurvived}</td>
+      <td>${r.rank}</td>
+    </tr>
+  `).join('');
+
+  output.innerHTML = `
+    <div class="progress-line">분석 완료 · ${rows.length}경기 반영</div>
+    <div class="stat-big-grid">
+      <div class="stat-big">
+        <span class="field-label">평균 킬 수</span>
+        <div class="val">${avgKills.toFixed(2)}</div>
+      </div>
+      <div class="stat-big">
+        <span class="field-label">평균 생존시간</span>
+        <div class="val">${avgTime.toFixed(0)}<span class="unit">초</span></div>
+      </div>
+      <div class="stat-big">
+        <span class="field-label">평균 순위</span>
+        <div class="val">${avgRank.toFixed(2)}</div>
+      </div>
+    </div>
+    <div class="matches-label">경기별 상세 (player_stats.csv 형식)</div>
+    <div class="csv-table-wrap">
+      <table class="csv-table">
+        <thead><tr><th>#</th><th>name</th><th>kills</th><th>timeSurvived</th><th>rank</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+    <div class="download-row">
+      <button id="downloadCsvBtn">CSV로 다운로드</button>
+    </div>
+  `;
+
+  document.getElementById('downloadCsvBtn').addEventListener('click', () => {
+    const header = 'name,kills,timeSurvived,rank\n';
+    const csvBody = rows.map(r => `${r.name},${r.kills},${r.timeSurvived},${r.rank}`).join('\n');
+    const blob = new Blob([header + csvBody], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${nickname}_stats.csv`;
+    link.click();
+  });
+
+  analyzeBtn.disabled = false;
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+async function searchPlayer(){
+  const key = apiKey;
+  const shard = shardSelect.value;
+  const nickname = nicknameInput.value.trim();
+
+  if(!key){ renderStatus('API 키가 로드되지 않았습니다. config.csv를 확인해주세요.', true); return; }
+  if(!nickname){ renderStatus('닉네임을 입력해주세요.', true); return; }
+
+  searchBtn.disabled = true;
+  searchBtn.textContent = '검색 중...';
+  renderStatus('조회 중입니다...');
+
+  try{
+    const url = `https://api.pubg.com/shards/${shard}/players?filter[playerNames]=${encodeURIComponent(nickname)}`;
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Accept': 'application/vnd.api+json'
+      }
+    });
+
+    if(res.status === 401){
+      renderStatus('API 키가 유효하지 않습니다. 키를 다시 확인해주세요.', true);
+      return;
+    }
+    if(res.status === 404){
+      renderStatus(`"${nickname}" 닉네임을 ${shard} 샤드에서 찾을 수 없습니다.`, true);
+      return;
+    }
+    if(res.status === 429){
+      renderStatus('요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.', true);
+      return;
+    }
+    if(!res.ok){
+      renderStatus(`오류가 발생했습니다 (HTTP ${res.status}).`, true);
+      return;
+    }
+
+    const data = await res.json();
+    if(!data.data || data.data.length === 0){
+      renderStatus('검색 결과가 없습니다.', true);
+      return;
+    }
+
+    renderPlayer(data.data[0], shard);
+  }catch(err){
+    renderStatus('네트워크 오류가 발생했습니다. 콘솔을 확인해주세요.', true);
+    console.error(err);
+  }finally{
+    searchBtn.disabled = false;
+    searchBtn.textContent = '검색';
+  }
+}
+
+searchBtn.addEventListener('click', searchPlayer);
+nicknameInput.addEventListener('keydown', e => { if(e.key === 'Enter') searchPlayer(); });
+</script>
+</body>
+</html>
